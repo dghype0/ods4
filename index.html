@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODS 4: Educação de Qualidade - Chat e Informações</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8d7da; /* Fundo levemente avermelhado */
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #c82333; /* Vermelho da ODS 4 */
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+        }
+        h1, h2 {
+            margin: 0;
+        }
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .chat-section, .info-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chat-section {
+            flex-basis: 60%;
+        }
+        .info-section {
+            flex-basis: 35%;
+        }
+        #chat-container {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 400px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+        }
+        #user-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #send-button {
+            width: 100%;
+            padding: 10px;
+            background-color: #c82333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .user-message {
+            background-color: #e6f2ff;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #f0f0f0;
+        }
+        .info-box {
+            background-color: #f8d7da;
+            border: 1px solid #c82333;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ODS 4: Educação de Qualidade</h1>
+        <p>Chat e Informações sobre o Objetivo de Desenvolvimento Sustentável 4 da ONU</p>
+    </header>
+    <div class="container">
+        <div class="content">
+            <section class="chat-section">
+                <h2>Chat sobre ODS 4</h2>
+                <div id="chat-container"></div>
+                <textarea id="user-input" placeholder="Digite sua mensagem aqui..."></textarea>
+                <button id="send-button">Enviar</button>
+            </section>
+            <section class="info-section">
+                <h2>Curiosidades</h2>
+                <div class="info-box">
+                    <h3>Sobre a ODS 4</h3>
+                    <ul>
+                        <li>A ODS 4 visa garantir educação inclusiva, equitativa e de qualidade para todos.</li>
+                        <li>Uma das metas é garantir que todas as meninas e meninos completem o ensino primário e secundário gratuito, equitativo e de qualidade até 2030.</li>
+                        <li>Outra meta importante é aumentar substancialmente o número de jovens e adultos que tenham habilidades relevantes para emprego, trabalho decente e empreendedorismo.</li>
+                    </ul>
+                </div>
+                <div class="info-box">
+                    <h3>Sobre a ONU</h3>
+                    <ul>
+                        <li>A ONU (Organização das Nações Unidas) foi fundada em 1945, após a Segunda Guerra Mundial.</li>
+                        <li>Atualmente, a ONU tem 193 países membros.</li>
+                        <li>Os Objetivos de Desenvolvimento Sustentável (ODS) foram adotados por todos os Estados Membros da ONU em 2015.</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        const API_KEY = '5f74eb8579e44d3db55d9548a13d7eb1';
+        const API_URL = 'https://alexa-m20y9agv-francecentral.openai.azure.com/openai/deployments/gpt-35-turboGracio/chat/completions?api-version=2023-03-15-preview';
+
+        const systemPrompt = "Você e um agente conversacional foi projetado para responder perguntas relacionadas à ODS 4: Educação de Qualidade, um dos Objetivos de Desenvolvimento Sustentável da ONU. O agente deve fornecer informações claras, precisas e acessíveis sobre a importância da educação de qualidade, os desafios globais e locais, as formas de contribuição individual e institucional, e dados sobre o progresso e as metas dessa ODS. Responda de forma amigável e informativa, sempre considerando o público-alvo como pessoas que podem ou não ter conhecimento prévio sobre os ODS.";
+
+        let conversationHistory = [
+            { role: "system", content: systemPrompt }
+        ];
+
+        function addMessageToChat(message, isUser) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
+            messageElement.textContent = message;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const userMessage = userInput.value.trim();
+            if (userMessage === '') return;
+
+            addMessageToChat(userMessage, true);
+            userInput.value = '';
+
+            conversationHistory.push({ role: "user", content: userMessage });
+
+            try {
+                const response = await axios.post(API_URL, {
+                    messages: conversationHistory
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'api-key': API_KEY
+                    }
+                });
+
+                const botResponse = response.data.choices[0].message.content;
+                addMessageToChat(botResponse, false);
+                conversationHistory.push({ role: "assistant", content: botResponse });
+            } catch (error) {
+                console.error('Erro ao enviar mensagem:', error);
+                addMessageToChat('Desculpe, ocorreu um erro ao processar sua mensagem.', false);
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
